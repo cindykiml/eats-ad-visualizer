@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How many sandwiches does $100 of ads buy? A fun visualizer by Cindy</title>
+<meta name="description" content="Drag the budget, watch the orders pile up. A playful take on helping Uber Eats merchants see what their ad spend gets them." />
+<!-- link previews (email, Slack, LinkedIn). Swap the domain if you deploy somewhere else -->
+<meta property="og:title" content="How many sandwiches does $100 of ads buy?" />
+<meta property="og:description" content="Drag the budget, watch the orders pile up. A fun visualizer by Cindy." />
+<meta property="og:image" content="https://ads.cindyly.design/og.png" />
+<meta property="og:url" content="https://ads.cindyly.design/" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#111;--ink2:#545454;--ink3:#8a8a8a;--line:#e8e8e8;--soft:#f4f4f4;--green:#06c167;--greenDeep:#048848;--blue:#276ef1;--blueSoft:#eef3fe}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:Inter,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.45;
+    background:#141414;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;min-height:100%}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+  .scene{width:390px;max-width:100%;height:464px;perspective:1400px}
+  .flip{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,1.4,.5,1)}
+  .flip.on{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;border-radius:14px;
+    border:1px solid var(--line);box-shadow:0 20px 50px rgba(0,0,0,.08);overflow:hidden;display:flex;flex-direction:column}
+  .back{transform:rotateY(180deg)}
+
+  /* front: mirrors the real recommendation card */
+  .tile{height:234px;background:#f1f1f1;display:grid;place-items:center;position:relative}
+  .phone{width:200px;height:200px;background:#fff;border:7px solid #111;border-bottom:0;border-radius:30px 30px 0 0;align-self:end;padding:10px 12px 0;display:flex;flex-direction:column;gap:7px;overflow:hidden}
+  .phone .status{display:flex;justify-content:space-between}
+  .phone .status i{height:7px;border-radius:4px;background:var(--soft);display:block}
+  .phone .status i:first-child{width:22px}
+  .phone .status span{display:flex;gap:4px}
+  .phone .status span i{width:12px}
+  .phone .status span i:last-child{width:26px}
+  .phone .search{height:22px;border-radius:11px;background:var(--soft);display:flex;align-items:center;gap:5px;padding:0 9px;font-size:8.5px;color:#9a9a9a}
+  .phone .search svg{width:9px;height:9px;flex:none}
+  .phone .food{height:76px;flex:none;border-radius:9px;background:#7a4a24 url(food.jpg) 90% 86%/125% auto;display:flex;align-items:center;justify-content:center;gap:2px;font-size:30px;overflow:hidden}
+  .phone .name{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:500;color:var(--ink);margin-top:1px}
+  .phone .name svg{width:11px;height:11px}
+  .phone .ln{height:6px;border-radius:3px;background:var(--soft);width:70%}
+  .phone .meta{display:flex;align-items:center;gap:4px;font-size:7.5px;color:var(--ink3)}
+  .phone .meta i{display:block;height:6px;width:52px;border-radius:3px;background:var(--soft)}
+  .phone .meta u{text-underline-offset:1.5px}
+  .fbody{padding:16px 20px 18px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .fbody h2{font-size:19px;font-weight:600;letter-spacing:-.01em}
+  .chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:12px;font-weight:500;padding:3px 9px;border-radius:6px;background:var(--blueSoft);color:var(--blue)}
+  .bill{width:15px;height:9px;flex:none}
+  .fbody p{color:var(--ink2)}
+  .frow{margin-top:auto;display:flex;justify-content:space-between;align-items:center}
+  .create{background:var(--soft);border-radius:8px;padding:10px 18px;font-weight:600;transition:background .15s,transform .15s}
+  .create:hover{background:#e9e9e9}
+  .create:active{transform:scale(.96)}
+  .thumbs{font-size:15px;letter-spacing:8px;filter:grayscale(1);opacity:.45}
+
+  /* back */
+  #rain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+  .ui{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}
+  .bhead{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 0}
+  .bhead small{font-size:12px;color:var(--ink3);font-weight:500}
+  .round{width:30px;height:30px;border-radius:50%;background:var(--soft);font-size:14px}
+  .q{padding:2px 20px 6px;font-size:15px;font-weight:600}
+  .big{padding:0 20px;font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums}
+  .big span{font-size:18px;font-weight:600;color:var(--ink3);letter-spacing:0}
+
+  .slider{padding:10px 20px 0}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;pointer-events:auto}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(90deg,#111 0 var(--p),#e6e6e6 var(--p))}
+  input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:linear-gradient(90deg,#111 0 var(--p),#e6e6e6 var(--p))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#111;border:1.5px solid #fff;margin-top:-12.5px;transition:transform .15s}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#111;border:1.5px solid #fff}
+  input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15)}
+  .weeks{display:inline-flex;align-self:center;align-items:center;gap:6px;margin:auto 20px 0;position:relative;z-index:2;padding:2px 10px;border-radius:6px;background:rgba(255,255,255,.88);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:var(--ink2);font-size:12.5px;font-weight:500;line-height:16px;white-space:nowrap}
+
+  .stats{margin:10px 20px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .stat{background:rgba(244,244,244,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:8px;padding:10px 12px}
+  .stat b{display:block;font-size:18px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .stat span{font-size:11.5px;color:var(--ink2);white-space:nowrap}
+  .line{margin:4px 20px 0;font-size:13px;color:var(--ink2)}
+  .line b{color:var(--greenDeep);font-weight:600}
+
+  .go{margin:8px 20px 14px;background:#111;color:#fff;border-radius:8px;padding:12px;font-weight:700;font-size:15px;transition:transform .15s,background .15s;position:relative;z-index:2}
+  .go:disabled{cursor:default}
+  .was{position:relative;opacity:.55;font-weight:500;margin-right:2px}
+  .was::after{content:"";position:absolute;left:-2px;right:-2px;top:52%;height:2px;border-radius:1px;background:currentColor;transform-origin:left;animation:strike .35s cubic-bezier(.5,0,.2,1) .15s both}
+  @keyframes strike{from{transform:scaleX(0)}}
+  @media (prefers-reduced-motion:reduce){.was::after{animation:none}}
+  @media (max-width:420px){ .stat{padding:10px} .stat span{font-size:11px} .stats{gap:6px} }
+  .go.done{background:var(--greenDeep)}
+
+  .credit{font-size:12.5px;color:var(--ink3);text-align:center}
+  .credit a{color:#d6d6d6}
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="flip" id="flip">
+
+    <!-- FRONT -->
+    <section class="face">
+      <div class="tile">
+        <div class="phone" aria-hidden="true">
+          <div class="status"><i></i><span><i></i><i></i></span></div>
+          <div class="search"><svg viewBox="0 0 12 12"><circle cx="5" cy="5" r="3.6" fill="none" stroke="#333" stroke-width="1.4"/><path d="M7.8 7.8 11 11" stroke="#333" stroke-width="1.4" stroke-linecap="round"/></svg>Search Uber Eats</div>
+          <div class="food"></div>
+          <div class="name">H Sandwiches<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" fill="none" stroke="#111" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+          <div class="ln"></div>
+          <div class="meta"><i></i>· <u>Sponsored</u></div>
+        </div>
+      </div>
+      <div class="fbody">
+        <h2>Create an ad campaign</h2>
+        <span class="chip"><svg class="bill" viewBox="0 0 20 12" aria-hidden="true"><rect x="1" y="1" width="18" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="6" r="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="4.5" cy="6" r=".9" fill="currentColor"/><circle cx="15.5" cy="6" r=".9" fill="currentColor"/></svg>$100 free credits</span>
+        <p>Merchants have seen a 15% increase in orders while running this campaign.</p>
+        <div class="frow">
+          <button class="create" id="create">Create</button>
+          <span class="thumbs">👍 👎</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- BACK -->
+    <section class="face back" id="backFace">
+      <canvas id="rain"></canvas>
+      <div class="ui">
+        <div class="bhead"><small>Ad campaign</small><button class="round" id="flipBack" aria-label="Back">↺</button></div>
+        <div class="q">How much do you want to spend?</div>
+        <div class="big" id="big">$60</div>
+        <div class="slider">
+          <input id="bud" type="range" min="10" max="200" step="5" value="60" aria-label="Weekly ad budget" />
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="visits">104</b><span>store visits</span></div>
+          <div class="stat"><b id="orders">8</b><span id="ordersL">extra orders</span></div>
+          <div class="stat"><b id="sales">$200</b><span>in sales</span></div>
+        </div>
+        <p class="line" id="line"></p>
+        <div class="weeks" id="chip"><span id="chipText"></span></div>
+        <button class="go" id="go" disabled>Start for $0</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<p class="credit">A fun Uber Eats visualizer by <a href="https://cindyly.design" target="_blank" rel="noopener">Cindy</a></p>
+
+<script>
+/* ---------- illustrative model ---------- */
+// Sponsored listings charge per tap. Weekly numbers, with returns that shrink as
+// budget grows (the likeliest customers come first). Lands around 6-8x return on
+// ad spend, in line with what Uber publishes for sponsored listings.
+const CREDITS = 100, AVG_ORDER = 24, COST_PER_TAP = 0.55, CONVERSION = 0.18;
+const model = b => {
+  const visits = Math.round(b / COST_PER_TAP * (1 - b / 1200));
+  const orders = Math.max(1, Math.round(visits * CONVERSION));
+  const sales = Math.round(orders * AVG_ORDER / 5) * 5;
+  const you = Math.max(0, b - CREDITS);
+  return { visits, orders, sales, you, perDollar: CONVERSION * AVG_ORDER / COST_PER_TAP * (1 - b / 1200), credit: Math.min(b, CREDITS) };
+};
+
+const $ = id => document.getElementById(id);
+const money = n => '$' + Math.round(n).toLocaleString();
+const flip = $('flip'), bud = $('bud'), go = $('go');
+
+/* ---------- physics rain ---------- */
+const cv = $('rain'), ctx = cv.getContext('2d');
+const FOODS = ['🥪','🥪','🍔','🥪','🌯','🍔'];
+const PAD = 10, G = 1500, MAX_FALL = 900, REST = 0.2, R_FULL = 15;
+let R = R_FULL;                          // shrinks a little on narrow (phone) cards
+let W = 0, H = 0, FLOOR = 0, bodies = [], queue = 0, last = 0, running = false, dpr = 1;
+const sprites = {};
+
+function sprite(e){
+  if (sprites[e]) return sprites[e];
+  const s = document.createElement('canvas'), px = Math.ceil(R * 2.4 * dpr);
+  s.width = s.height = px;
+  const c = s.getContext('2d');
+  c.font = `${R * 1.9 * dpr}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(e, px / 2, px / 2 + dpr);
+  return (sprites[e] = s);
+}
+
+function resize(){
+  R = Math.round(R_FULL * Math.min(1, $('backFace').offsetWidth / 390) * 10) / 10;
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  const r = $('backFace').getBoundingClientRect();
+  W = $('backFace').offsetWidth; H = $('backFace').offsetHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  FLOOR = $('chip').offsetTop - 2;       // pile settles just above the credits chip
+  for (const k in sprites) delete sprites[k];
+}
+
+function spawn(){
+  bodies.push({
+    x: PAD + R + Math.random() * (W - 2 * (PAD + R)), y: -R - Math.random() * 40,
+    vx: (Math.random() - .5) * 60, vy: 120 + Math.random() * 80,
+    a: (Math.random() - .5) * 1.2, va: (Math.random() - .5) * 2.5,
+    e: FOODS[Math.floor(Math.random() * FOODS.length)], alpha: 1, dying: false
+  });
+}
+
+function step(dt){
+  // drip new items in
+  if (queue > 0 && Math.random() < 0.5){ spawn(); queue--; }
+
+  for (const b of bodies){
+    b.contact = false;
+    b.vy = Math.min(b.vy + G * dt, MAX_FALL);       // terminal velocity: softer landings
+    b.x += b.vx * dt; b.y += b.vy * dt; b.a += b.va * dt;
+    b.va *= 0.995;
+    if (b.dying){ b.alpha -= dt * 4; b.vy -= G * dt * 1.6; }
+  }
+  // collisions (a few passes for a stable pile)
+  for (let it = 0; it < 4; it++){
+    for (let i = 0; i < bodies.length; i++){
+      const p = bodies[i]; if (p.dying) continue;
+      if (p.y > FLOOR - R){ p.y = FLOOR - R; if (p.vy > 0) p.vy *= -REST; p.contact = true; }
+      if (p.x < PAD + R){ p.x = PAD + R; p.vx = Math.abs(p.vx) * REST; }
+      if (p.x > W - PAD - R){ p.x = W - PAD - R; p.vx = -Math.abs(p.vx) * REST; }
+      for (let j = i + 1; j < bodies.length; j++){
+        const q = bodies[j]; if (q.dying) continue;
+        const dx = q.x - p.x, dy = q.y - p.y, d2 = dx * dx + dy * dy, min = R * 2 - 3;
+        if (d2 > 0 && d2 < min * min){
+          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, push = (min - d) / 2;
+          p.x -= nx * push; p.y -= ny * push; q.x += nx * push; q.y += ny * push;
+          const rv = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny;
+          if (rv < 0){
+            const jimp = -(1 + REST) * rv / 2;
+            p.vx -= jimp * nx; p.vy -= jimp * ny; q.vx += jimp * nx; q.vy += jimp * ny;
+          }
+          // whoever is on top is resting on the other
+          if (ny > 0.3) p.contact = true; else if (ny < -0.3) q.contact = true;
+        }
+      }
+    }
+  }
+  // settle: anything touching something loses spin and slide fast, then sleeps
+  for (const b of bodies){
+    if (!b.contact || b.dying) continue;
+    b.vx *= 0.9; b.va *= 0.82;
+    if (Math.abs(b.vx) < 6 && Math.abs(b.vy) < 25){ b.vx = 0; b.va = 0; }
+  }
+  bodies = bodies.filter(b => b.alpha > 0);
+}
+
+function draw(){
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  for (const b of bodies){
+    const s = sprite(b.e), size = R * 2.4;
+    ctx.save(); ctx.globalAlpha = Math.max(0, b.alpha);
+    ctx.translate(b.x, b.y); ctx.rotate(b.a);
+    ctx.drawImage(s, -size / 2, -size / 2, size, size);
+    ctx.restore();
+  }
+}
+
+function loop(t){
+  if (!running) return;
+  const dt = Math.min(0.033, (t - (last || t)) / 1000); last = t;
+  const sub = 3; for (let i = 0; i < sub; i++) step(dt / sub);
+  draw(); requestAnimationFrame(loop);
+}
+
+function setCount(n){
+  const alive = bodies.filter(b => !b.dying).length + queue;
+  if (n > alive) queue += n - alive;
+  else if (n < alive){
+    let drop = alive - n;
+    const fromQueue = Math.min(queue, drop); queue -= fromQueue; drop -= fromQueue;
+    // lift the highest items out of the pile first
+    const live = bodies.filter(b => !b.dying).sort((a, b) => a.y - b.y);
+    for (let i = 0; i < drop && i < live.length; i++) live[i].dying = true;
+  }
+}
+
+/* ---------- UI ---------- */
+function update(){
+  const b = +bud.value, m = model(b);
+  $('big').innerHTML = money(b) + '<span> / week</span>';
+  // credits are a one-time $100, drawn down week by week
+
+  $('orders').textContent = m.orders;
+  $('visits').textContent = m.visits.toLocaleString();
+  $('sales').textContent = money(m.sales);
+  $('ordersL').textContent = m.orders === 1 ? 'extra order' : 'extra orders';
+  $('line').innerHTML = `About <b>$${m.perDollar.toFixed(2)} in sales for every $1</b> you spend.`;
+  $('chipText').textContent = `Using ${money(Math.min(b, CREDITS))} of free credits`;
+  if (!go.classList.contains('done')){
+    if (!$('was')) go.innerHTML = 'Start for <span class="was" id="was"></span> <span id="now"></span> this week';
+    $('was').textContent = money(b);
+    $('now').textContent = money(m.you);
+    go.setAttribute('aria-label', `Start for ${money(m.you)} this week, down from ${money(b)} with credits`);
+  }
+
+  // positions line up with the thumb's center (thumb is 28px wide)
+  const min = +bud.min, max = +bud.max, at = v => `calc(14px + (100% - 28px) * ${(v - min) / (max - min)})`;
+  bud.style.setProperty('--p', at(b));
+
+  if (running) setCount(m.orders);
+}
+
+$('create').onclick = () => {
+  flip.classList.add('on');
+  setTimeout(() => {          // start the rain once the flip lands
+    resize(); bodies = []; queue = 0; running = true; last = 0;
+    go.innerHTML = '';
+    requestAnimationFrame(loop); update();
+  }, 450);
+};
+$('flipBack').onclick = () => {
+  flip.classList.remove('on'); go.classList.remove('done');
+  setTimeout(() => { running = false; bodies = []; queue = 0; draw(); }, 500);
+};
+bud.addEventListener('input', () => { go.classList.remove('done'); update(); });
+window.addEventListener('resize', () => { if (running) resize(); });
+update();
+</script>
+</body>
+</html>
